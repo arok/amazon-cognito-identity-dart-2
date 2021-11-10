@@ -1033,7 +1033,7 @@ class CognitoUser {
     final idTokenKey = '$keyPrefix.idToken';
     final accessTokenKey = '$keyPrefix.accessToken';
     final refreshTokenKey = '$keyPrefix.refreshToken';
-    final userIdKey = '$keyPrefix.userid';
+    final userIdKey = '$keyPrefix.userId';
     final clockDriftKey = '$keyPrefix.clockDrift';
 
     await Future.wait([
