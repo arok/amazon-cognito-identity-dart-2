@@ -45,6 +45,7 @@ class CognitoUser {
   String? verifierDevices;
   late CognitoStorage storage;
   final ParamsDecorator _analyticsMetadataParamsDecorator;
+  String? userId;
 
   CognitoUser(
     this.username,
@@ -251,6 +252,8 @@ class CognitoUser {
 
     if (await storage.getItem(pool.lastUserKey) != null) {
       username = await storage.getItem(pool.lastUserKey);
+      final userIdKey = '$keyPrefix.userId';
+      userId = await storage.getItem(userIdKey);
       final deviceKeyKey = '$keyPrefix.deviceKey';
       _deviceKey = await storage.getItem(deviceKeyKey);
       authParameters['DEVICE_KEY'] = _deviceKey;
@@ -593,6 +596,7 @@ class CognitoUser {
     final challengeParameters = data['ChallengeParameters'];
 
     String srp_username = challengeParameters['USER_ID_FOR_SRP'];
+    userId = srp_username;
     serverBValue = BigInt.parse(challengeParameters['SRP_B'], radix: 16);
     saltString =
         authenticationHelper.toUnsignedHex(challengeParameters['SALT']);
@@ -835,7 +839,7 @@ class CognitoUser {
   Future<CognitoUserSession?> sendMFACode(String confirmationCode,
       [String mfaType = 'SMS_MFA']) async {
     final challengeResponses = {
-      'USERNAME': username,
+      'USERNAME': userId ?? username,
       'SMS_MFA_CODE': confirmationCode,
     };
     if (mfaType == 'SOFTWARE_TOKEN_MFA') {
@@ -1029,6 +1033,7 @@ class CognitoUser {
     final idTokenKey = '$keyPrefix.idToken';
     final accessTokenKey = '$keyPrefix.accessToken';
     final refreshTokenKey = '$keyPrefix.refreshToken';
+    final userIdKey = '$keyPrefix.userid';
     final clockDriftKey = '$keyPrefix.clockDrift';
 
     await Future.wait([
@@ -1038,6 +1043,7 @@ class CognitoUser {
           accessTokenKey, _signInUserSession?.getAccessToken().getJwtToken()),
       storage.setItem(
           refreshTokenKey, _signInUserSession?.getRefreshToken()?.getToken()),
+      storage.setItem(userIdKey, userId),
       storage.setItem(clockDriftKey, '${_signInUserSession?.getClockDrift()}'),
       storage.setItem(pool.lastUserKey, username),
     ]);
@@ -1048,12 +1054,14 @@ class CognitoUser {
     final idTokenKey = '$keyPrefix.idToken';
     final accessTokenKey = '$keyPrefix.accessToken';
     final refreshTokenKey = '$keyPrefix.refreshToken';
+    final userIdKey = '$keyPrefix.userId';
     final clockDriftKey = '$keyPrefix.clockDrift';
 
     await Future.wait([
       storage.removeItem(idTokenKey),
       storage.removeItem(accessTokenKey),
       storage.removeItem(refreshTokenKey),
+      storage.removeItem(userIdKey),
       storage.removeItem(clockDriftKey),
       storage.removeItem(pool.lastUserKey),
     ]);
